@@ -13,10 +13,12 @@ app.listen(3000, () => {
 
 /*
   Planning the API routes:
-    * 
-    * 
-    * 
-    * 
+    routes                  type  return
+    ------------------------------------
+    * /                 --> GET:  this is working
+    * /signin           --> POST: success/fail
+    * /register         --> POST: user data
+    * /profile/:userId  --> GET:  user data
     * 
     * 
     * 
