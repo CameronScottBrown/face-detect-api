@@ -1,8 +1,27 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
+
+const db = require('knex')({
+  client: 'pg',
+  connection: {
+    host : '127.0.0.1',
+    user : 'postgres', //change this hopefully
+    password : 'dbpass', //this too
+    database : 'face-detect'
+  }
+});
+
+const pg = require('knex')({
+  client: 'pg',
+  connection: process.env.PG_CONNECTION_STRING,
+  searchPath: ['knex', 'public'],
+});
+
+db.select('*').from('users').then(data => {
+  //console.log(data);
+});
 
 const app = express();
 
@@ -38,7 +57,7 @@ const database = {
 }
 
 app.get('/', (req, res) => {
-  res.send(database.users );
+  res.send(database.users);
 });
 
 app.post('/signin', (req, res) => {
@@ -57,53 +76,39 @@ app.post('/register', (req, res) => {
   const { name, email, password } = req.body;
   bcrypt.hash(password, null, null, function(err, hash) {
     // Store hash in your password DB.
-    console.log(hash);
+    //console.log(hash);
   }); 
-  database.users.push({
-      id: '125',
-      name: name,
-      email: email,
-      password: password,
-      entries: 0,
-      joined: new Date()
-  });
-
-  res.json(database.users[database.users.length-1]);
-
+  db('users')
+    .returning('*')
+    .insert({
+        name: name,
+        email: email,
+        joined: new Date()
+    })
+    .then(user => {
+      res.json(user[0]);
+    })
+    .catch(err => res.status(400).json('unable to join'));
 });
 
 app.get('/profile/:id', (req, res) => {
   const { id } = req.params;
-  let found = false;
-
-  database.users.forEach(user => {
-    if(user.id === id) {
-      found = true;
-      return res.json(user);
-    } 
-  });
-
-  if(!found) {
-    res.status(400).json('user not found');
-  }
+  db.select('*').from('users').where({id})
+    .then(user => {
+      if(user.length){
+        res.json(use[0]);
+      } else {
+        res.status(400).json('user not found'); // user doesn't exist
+      }
+    })
+    .catch(err => res.status(400).json('error getting user')); // systemic error
 
 });
 
 app.put('/image', (req, res) => {
   const { id } = req.body;
-  let found = false;
-
-  database.users.forEach(user => {
-    if(user.id === id) {
-      found = true;
-      user.entries++;
-      return res.json(user.entries);
-    } 
-  });
-
-  if(!found) {
-    res.status(400).json('user not found');
-  }
+  db.where('id', '=', id)
+  .increment('entries', 1)
 });
 
 
