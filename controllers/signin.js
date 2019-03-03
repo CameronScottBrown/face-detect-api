@@ -17,7 +17,7 @@ const handleSignIn = (req, res, db, bcrypt) => {
         res.status(400).json('incorrect credentials');
       }
     })
-};
+}; 
 
 module.exports = {
   handleSignIn: handleSignIn
