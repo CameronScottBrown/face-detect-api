@@ -19,105 +19,26 @@ const pg = require('knex')({
   searchPath: ['knex', 'public'],
 });
 
-db.select('*').from('users').then(data => {
-  //console.log(data);
-});
+//controllers
+const register = require('./controllers/register');
+const signin = require('./controllers/signin');
+const profile = require('./controllers/profile');
+const image = require('./controllers/image');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
 
-const database = { 
-  users: [
-    {
-      id: '123',
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'cookies',
-      entries: 0,
-      joined: new Date()
-    },
-    {
-      id: '124',
-      name: 'Sally',
-      email: 'sally@gmail.com',
-      password: 'bananas',
-      entries: 0,
-      joined: new Date()
-    }
-  ],
-  login: [
-    {
-      id: '987',
-      hash: '',
-      email: 'john@gmail.com'
-    }
-  ]
-}
-
 app.get('/', (req, res) => {
-  res.send(database.users);
+  // res.send(db.users);
 });
 
-app.post('/signin', (req, res) => {
-  // Load hash from your password DB.
-  bcrypt.compare(req.password, '$2a$10$m13QXFIQwJKY1v6VYhL9O.D8VnviYiKp2O/d0BWU7/L7P.s8E209G', function(err, res) {
-    console.log('match');
-  });
-  if(req.body.email === database.users[0].email && req.body.password === database.users[0].password) {
-    res.json(database.users[0]);
-  } else {
-    res.status(400).json('error logging in'); 
-  }
-});
+app.post('/signin', (req, res) => {signin.handleSignIn(req, res, db, bcrypt)});
+app.post('/register', (req, res) => {register.handleRegister(req, res, db, bcrypt)});
+app.get('/profile/:id', (req, res) => {profile.handleProfileGet(req, res, db)});
+app.put('/image', (req, res) => {image.handleImage(req, res, db)});
 
-app.post('/register', (req, res) => {
-  const { name, email, password } = req.body;
-  bcrypt.hash(password, null, null, function(err, hash) {
-    // Store hash in your password DB.
-    //console.log(hash);
-  }); 
-  db('users')
-    .returning('*')
-    .insert({
-        name: name,
-        email: email,
-        joined: new Date()
-    })
-    .then(user => {
-      res.json(user[0]);
-    })
-    .catch(err => res.status(400).json('unable to join'));
-});
-
-app.get('/profile/:id', (req, res) => {
-  const { id } = req.params;
-  db.select('*').from('users').where({id})
-    .then(user => {
-      if(user.length){
-        res.json(use[0]);
-      } else {
-        res.status(400).json('user not found'); // user doesn't exist
-      }
-    })
-    .catch(err => res.status(400).json('error getting user')); // systemic error
-
-});
-
-app.put('/image', (req, res) => {
-  const { id } = req.body;
-  db.where('id', '=', id)
-  .increment('entries', 1)
-});
-
-
-
-
-
-// bcrypt.compare("veggies", hash, function(err, res) {
-//   // res = false
-// });
 
 app.listen(3000, () => {
   console.log('server running on port 3000');
@@ -126,14 +47,14 @@ app.listen(3000, () => {
 
 
 /*
-  Planning the API routes:
+  Overview of API routes:
     routes                  type  return
     ------------------------------------
-    * /                 --> GET:  this is working
+    * /                 --> GET:  ---
     * /signin           --> POST: success/fail
     * /register         --> POST: user data
     * /profile/:userId  --> GET:  user data
-    * /image            --> PUT:  user data
+    * /image            --> PUT:  entries (entry count)
     * 
     * 
 */
